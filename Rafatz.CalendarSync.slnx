@@ -5,7 +5,6 @@
     <File Path=".github/workflows/pr-check.yml" />
   </Folder>
   <Folder Name="/Solution Files/">
-    <File Path=".dockerignore" />
     <File Path=".gitignore" />
     <File Path="LICENSE" />
     <File Path="README.md" />
