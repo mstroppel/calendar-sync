@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/pr-check.yml" />
+  </Folder>
   <Folder Name="/Solution Files/">
     <File Path=".dockerignore" />
     <File Path=".gitignore" />
