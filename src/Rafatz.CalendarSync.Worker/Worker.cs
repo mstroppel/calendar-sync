@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using CalDAV.Models;
 using Microsoft.Extensions.Options;
 
 namespace Rafatz.CalendarSync;
@@ -46,14 +47,13 @@ public class Worker(
     private async Task RunSyncAsync(CancellationToken ct)
     {
         var pattern = new Regex(_settings.SourceEventPattern, RegexOptions.IgnoreCase);
-        var today = DateTimeOffset.UtcNow.Date;
+        var today = DateTime.UtcNow.Date;
 
         logger.LogInformation("Starting sync for {Days} days from {Today}.", _settings.SyncDaysAhead, today);
 
         for (var dayOffset = 0; dayOffset < _settings.SyncDaysAhead; dayOffset++)
         {
-            var day = today.AddDays(dayOffset);
-            var dayStart = new DateTimeOffset(day, TimeSpan.Zero);
+            var dayStart = today.AddDays(dayOffset);
             var dayEnd = dayStart.AddDays(1);
 
             await SyncDayAsync(pattern, dayStart, dayEnd, ct);
@@ -64,8 +64,8 @@ public class Worker(
 
     private async Task SyncDayAsync(
         Regex pattern,
-        DateTimeOffset dayStart,
-        DateTimeOffset dayEnd,
+        DateTime dayStart,
+        DateTime dayEnd,
         CancellationToken ct)
     {
         // 1. Fetch matching source events for this day
@@ -79,7 +79,7 @@ public class Worker(
 
         var matchingEvents = sourceEvents
             .Where(e => pattern.IsMatch(e.Event.Summary ?? string.Empty))
-            .OrderBy(e => e.Event.DtStart.AsDateTimeOffset)
+            .OrderBy(e => e.Event.StartTime)
             .ToList();
 
         // 2. Clean up existing target events for this day
@@ -100,12 +100,13 @@ public class Worker(
 
         foreach (var stale in staleTargetEvents)
         {
-            logger.LogInformation("Deleting stale target event on {Day}: {Href}", dayStart.Date, stale.Href);
+            logger.LogInformation("Deleting stale target event on {Day}: {Url}", dayStart.Date, stale.Url);
             await calDav.DeleteEventAsync(
                 _settings.TargetUrl,
-                stale.Href,
                 _settings.TargetUsername,
                 _settings.TargetPassword,
+                stale.Url,
+                stale.Etag,
                 ct);
         }
 
@@ -116,8 +117,8 @@ public class Worker(
             return;
         }
 
-        var firstStart = matchingEvents.First().Event.DtStart.AsDateTimeOffset;
-        var lastEnd = matchingEvents.Max(e => e.Event.DtEnd?.AsDateTimeOffset ?? e.Event.DtStart.AsDateTimeOffset);
+        var firstStart = matchingEvents.First().Event.StartTime;
+        var lastEnd = matchingEvents.Max(e => e.Event.EndTime);
 
         var targetStart = firstStart.AddMinutes(-_settings.PrependMinutes);
         var targetEnd = lastEnd;

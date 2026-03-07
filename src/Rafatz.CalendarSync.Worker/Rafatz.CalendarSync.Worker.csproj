@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
     <PropertyGroup>
+        <RootNamespace>Rafatz.CalendarSync</RootNamespace>
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -10,7 +11,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3"/>
-        <PackageReference Include="Ical.Net" Version="4.3.0"/>
+        <PackageReference Include="jvilalta.CalDAV" Version="2.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
