@@ -1,5 +1,7 @@
 <Solution>
+  <Folder Name="/.github/" />
   <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/docker-publish.yml" />
     <File Path=".github/workflows/pr-check.yml" />
   </Folder>
   <Folder Name="/Solution Files/">
