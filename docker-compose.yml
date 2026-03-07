@@ -1,29 +1,18 @@
 services:
   calendar-sync:
-    image: ghcr.io/<your-github-username>/rafatz-calendar-sync:latest
+    image: ghcr.io/mstroppel/rafatz-calendar-sync:latest
     restart: unless-stopped
     environment:
-      # --- Source calendar (Nextcloud CalDAV) ---
-      CalendarSync__SourceUrl: "https://nextcloud.example.com/remote.php/dav/calendars/user/my-calendar/"
-      CalendarSync__SourceUsername: "source-user"
-      CalendarSync__SourcePassword: "source-password"
-
-      # --- Target calendar (Nextcloud CalDAV) ---
-      CalendarSync__TargetUrl: "https://nextcloud.example.com/remote.php/dav/calendars/user/target-calendar/"
-      CalendarSync__TargetUsername: "target-user"
-      CalendarSync__TargetPassword: "target-password"
-
-      # --- Sync rules ---
-      # Regex matched against source event titles
-      CalendarSync__SourceEventPattern: "^Work.*"
-      # Name of the merged event written to the target calendar
-      CalendarSync__TargetEventName: "Blocked"
-      # Number of days ahead of today to sync
-      CalendarSync__SyncDaysAhead: "7"
-      # Minutes before the first matching event the target event starts
-      CalendarSync__PrependMinutes: "15"
-      # How often the sync runs (in minutes)
-      CalendarSync__SyncIntervalMinutes: "15"
-
-      # --- Logging (optional) ---
-      Logging__LogLevel__Default: "Information"
+      - SOURCE_SERVER_URL="https://my.nexcloud.com/remote.php/dav/"
+      - SOURCE_CALENDAR_URL="https://my.nexcloud.com/remote.php/dav/calendars/your_name/your_source_calendar_id/"
+      - SOURCE_USERNAME= "your_username"
+      - SOURCE_PASSWORD= "your_password"
+      - TARGET_SERVER_URL="https://my.nexcloud.com/remote.php/dav/"
+      - TARGET_CALENDAR_URL="https://my.nexcloud.com/remote.php/dav/calendars/your_name/your_target_calendar_id/"
+      - TARGET_USERNAME="your_email"
+      - TARGET_PASSWORD="your_password"
+      - SOURCE_EVENT_PATTERN=".*[SCH|STR|FA].*"
+      - TARGET_EVENT_NAME=Sammeltermine
+      - SYNC_DAYS_AHEAD=7
+      - PREPEND_MINUTES=0
+      - SYNC_INTERVAL_MINUTES=15

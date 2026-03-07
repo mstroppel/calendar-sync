@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/Solution Files/">
     <File Path=".gitignore" />
+    <File Path="docker-compose.yml" />
     <File Path="LICENSE" />
     <File Path="README.md" />
   </Folder>

@@ -18,4 +18,7 @@ RUN dotnet publish "./Rafatz.CalendarSync.Worker.csproj" -c $BUILD_CONFIGURATION
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV SYNC_DAYS_AHEAD=7 \
+    PREPEND_MINUTES=3 \
+    SYNC_INTERVAL_MINUTES=15
 ENTRYPOINT ["dotnet", "Rafatz.CalendarSync.Worker.dll"]
