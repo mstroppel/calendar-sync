@@ -1,0 +1,29 @@
+services:
+  calendar-sync:
+    image: ghcr.io/<your-github-username>/rafatz-calendar-sync:latest
+    restart: unless-stopped
+    environment:
+      # --- Source calendar (Nextcloud CalDAV) ---
+      CalendarSync__SourceUrl: "https://nextcloud.example.com/remote.php/dav/calendars/user/my-calendar/"
+      CalendarSync__SourceUsername: "source-user"
+      CalendarSync__SourcePassword: "source-password"
+
+      # --- Target calendar (Nextcloud CalDAV) ---
+      CalendarSync__TargetUrl: "https://nextcloud.example.com/remote.php/dav/calendars/user/target-calendar/"
+      CalendarSync__TargetUsername: "target-user"
+      CalendarSync__TargetPassword: "target-password"
+
+      # --- Sync rules ---
+      # Regex matched against source event titles
+      CalendarSync__SourceEventPattern: "^Work.*"
+      # Name of the merged event written to the target calendar
+      CalendarSync__TargetEventName: "Blocked"
+      # Number of days ahead of today to sync
+      CalendarSync__SyncDaysAhead: "7"
+      # Minutes before the first matching event the target event starts
+      CalendarSync__PrependMinutes: "15"
+      # How often the sync runs (in minutes)
+      CalendarSync__SyncIntervalMinutes: "15"
+
+      # --- Logging (optional) ---
+      Logging__LogLevel__Default: "Information"
