@@ -38,7 +38,7 @@ public class Worker(
                 _logger.LogError(ex, "Sync cycle failed");
             }
 
-            _logger.LogDebug("Waiting for {Minutes} minutes until next sync cycle", _settings.SyncIntervalMinutes);
+            _logger.LogInformation("Waiting for {Minutes} minutes until next sync cycle", _settings.SyncIntervalMinutes);
             await Task.Delay(TimeSpan.FromMinutes(_settings.SyncIntervalMinutes), stoppingToken);
         }
 
