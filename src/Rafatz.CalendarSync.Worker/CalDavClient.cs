@@ -9,24 +9,25 @@ public class CalDavClient(
     Uri _calendarUrl,
     string _username,
     string _password,
-    ILogger<CalDavClient> _logger)
+    ILogger<CalDavClient> _logger) : ICalDavClient
 {
     private readonly CalDAVClient _client = new(_serverUrl.ToString(), _username, _password);
+    private bool _initialized;
     
     public async Task<IReadOnlyList<CalendarEvent>> GetEventsAsync(
         DateTime start,
         DateTime end,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        await _client.InitializeAsync();
+        await InitializeAsync();
 
         var events = await _client.GetEventsAsync(_calendarUrl.ToString(), start, end);
         return events;
     }
 
-    public async Task DeleteEventAsync(string eventUrl, string etag, CancellationToken ct)
+    public async Task DeleteEventAsync(string eventUrl, string etag, CancellationToken cancellationToken)
     {
-        await _client.InitializeAsync();
+        await InitializeAsync();
 
         await _client.DeleteEventAsync(eventUrl, etag);
         _logger.LogDebug("Deleted event {Url}", eventUrl);
@@ -36,9 +37,9 @@ public class CalDavClient(
         string summary,
         DateTime startTime,
         DateTime endTime,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
-        await _client.InitializeAsync();
+        await InitializeAsync();
 
         var evt = new CalendarEvent
         {
@@ -52,10 +53,30 @@ public class CalDavClient(
         var createdUrl = await _client.CreateEventAsync(_calendarUrl.ToString(), icsData);
         _logger.LogDebug("Created event '{Summary}' at {Url}", summary, createdUrl);
     }
+
+    private async Task InitializeAsync()
+    {
+        if (_initialized)
+        {
+            return;
+        }
+        await _client.InitializeAsync();
+        _initialized = true;
+    }
 }
 
-public class SourceCalDavClient(Uri serverUrl, Uri calendarUrl, string username, string password, ILogger<CalDavClient> logger)
-    : CalDavClient(serverUrl, calendarUrl, username, password, logger);
+public interface ICalDavClient
+{
+    Task<IReadOnlyList<CalendarEvent>> GetEventsAsync(
+        DateTime start,
+        DateTime end,
+        CancellationToken cancellationToken);
 
-public class TargetCalDavClient(Uri serverUrl, Uri calendarUrl, string username, string password, ILogger<CalDavClient> logger)
-    : CalDavClient(serverUrl, calendarUrl, username, password, logger);
+    Task DeleteEventAsync(string eventUrl, string etag, CancellationToken cancellationToken);
+
+    Task CreateEventAsync(
+        string summary,
+        DateTime startTime,
+        DateTime endTime,
+        CancellationToken cancellationToken);
+}

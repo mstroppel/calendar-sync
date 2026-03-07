@@ -5,8 +5,8 @@ namespace Rafatz.CalendarSync;
 
 public class Worker(
     ILogger<Worker> _logger,
-    SourceCalDavClient _sourceCalDav,
-    TargetCalDavClient _targetCalDav,
+    ICalDavClient _sourceCalDav,
+    ICalDavClient _targetCalDav,
     IOptions<CalendarSyncSettings> _options) : BackgroundService
 {
     private readonly CalendarSyncSettings _settings = _options.Value;
