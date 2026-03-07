@@ -1,0 +1,18 @@
+services:
+  calendar-sync:
+    image: ghcr.io/mstroppel/rafatz-calendar-sync:latest
+    restart: unless-stopped
+    environment:
+      - SOURCE_SERVER_URL="https://my.nexcloud.com/remote.php/dav/"
+      - SOURCE_CALENDAR_URL="https://my.nexcloud.com/remote.php/dav/calendars/your_name/your_source_calendar_id/"
+      - SOURCE_USERNAME= "your_username"
+      - SOURCE_PASSWORD= "your_password"
+      - TARGET_SERVER_URL="https://my.nexcloud.com/remote.php/dav/"
+      - TARGET_CALENDAR_URL="https://my.nexcloud.com/remote.php/dav/calendars/your_name/your_target_calendar_id/"
+      - TARGET_USERNAME="your_email"
+      - TARGET_PASSWORD="your_password"
+      - SOURCE_EVENT_PATTERN=".*[SCH|STR|FA].*"
+      - TARGET_EVENT_NAME=Sammeltermine
+      - SYNC_DAYS_AHEAD=7
+      - PREPEND_MINUTES=0
+      - SYNC_INTERVAL_MINUTES=15
