@@ -5,12 +5,13 @@ using CalDAV.Utils;
 namespace Rafatz.CalendarSync;
 
 public class CalDavClient(
-    string _calendarUrl,
+    Uri _serverUrl,
+    Uri _calendarUrl,
     string _username,
     string _password,
     ILogger<CalDavClient> _logger)
 {
-    private readonly CalDAVClient _client = new(_calendarUrl, _username, _password);
+    private readonly CalDAVClient _client = new(_serverUrl.ToString(), _username, _password);
     
     public async Task<IReadOnlyList<CalendarEvent>> GetEventsAsync(
         DateTime start,
@@ -19,7 +20,7 @@ public class CalDavClient(
     {
         await _client.InitializeAsync();
 
-        var events = await _client.GetEventsAsync(_calendarUrl, start, end);
+        var events = await _client.GetEventsAsync(_calendarUrl.ToString(), start, end);
         return events;
     }
 
@@ -48,13 +49,13 @@ public class CalDavClient(
         };
 
         var icsData = ICalendarGenerator.GenerateEvent(evt);
-        var createdUrl = await _client.CreateEventAsync(_calendarUrl, icsData);
+        var createdUrl = await _client.CreateEventAsync(_calendarUrl.ToString(), icsData);
         _logger.LogDebug("Created event '{Summary}' at {Url}", summary, createdUrl);
     }
 }
 
-public class SourceCalDavClient(string calendarUrl, string username, string password, ILogger<CalDavClient> logger)
-    : CalDavClient(calendarUrl, username, password, logger);
+public class SourceCalDavClient(Uri serverUrl, Uri calendarUrl, string username, string password, ILogger<CalDavClient> logger)
+    : CalDavClient(serverUrl, calendarUrl, username, password, logger);
 
-public class TargetCalDavClient(string calendarUrl, string username, string password, ILogger<CalDavClient> logger)
-    : CalDavClient(calendarUrl, username, password, logger);
+public class TargetCalDavClient(Uri serverUrl, Uri calendarUrl, string username, string password, ILogger<CalDavClient> logger)
+    : CalDavClient(serverUrl, calendarUrl, username, password, logger);

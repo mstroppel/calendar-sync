@@ -16,8 +16,8 @@ public class Worker(
         _logger.LogInformation("CalendarSync worker started");
         _logger.LogInformation(
             "Source: {SourceUrl} | Target: {TargetUrl} | Pattern: {Pattern} | DaysAhead: {Days} | PrependMinutes: {Prepend} | Interval: {Interval}min",
-            _settings.SourceUrl,
-            _settings.TargetUrl,
+            _settings.SourceCalendarUrl,
+            _settings.TargetCalendarUrl,
             _settings.SourceEventPattern,
             _settings.SyncDaysAhead,
             _settings.PrependMinutes,
