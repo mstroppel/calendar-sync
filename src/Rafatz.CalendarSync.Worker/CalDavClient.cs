@@ -9,7 +9,7 @@ public class CalDavClient(
     Uri _calendarUrl,
     string _username,
     string _password,
-    ILogger<CalDavClient> _logger) : ICalDavClient
+    ILogger<CalDavClient> _logger) : ISourceCalDavClient, ITargetCalDavClient
 {
     private readonly CalDAVClient _client = new(_serverUrl.ToString(), _username, _password);
     private bool _initialized;
@@ -25,9 +25,11 @@ public class CalDavClient(
         return events;
     }
 
-    public async Task DeleteEventAsync(string eventUrl, string etag, CancellationToken cancellationToken)
+    public async Task DeleteEventAsync(string eventHref, string etag, CancellationToken cancellationToken)
     {
         await InitializeAsync();
+        
+        var eventUrl = $"{_serverUrl.Scheme}://{_serverUrl.Host}{eventHref}"; 
 
         await _client.DeleteEventAsync(eventUrl, etag);
         _logger.LogDebug("Deleted event {Url}", eventUrl);
@@ -72,11 +74,19 @@ public interface ICalDavClient
         DateTime end,
         CancellationToken cancellationToken);
 
-    Task DeleteEventAsync(string eventUrl, string etag, CancellationToken cancellationToken);
+    Task DeleteEventAsync(string eventHref, string etag, CancellationToken cancellationToken);
 
     Task CreateEventAsync(
         string summary,
         DateTime startTime,
         DateTime endTime,
         CancellationToken cancellationToken);
+}
+
+public interface ISourceCalDavClient : ICalDavClient
+{
+}
+
+public interface ITargetCalDavClient : ICalDavClient
+{
 }

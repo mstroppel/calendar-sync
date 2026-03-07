@@ -26,20 +26,18 @@ builder.Services.AddSingleton<IOptions<CalendarSyncSettings>>(sp =>
     return Options.Create(settings);
 });
 
-builder.Services.AddScoped<Worker>(sp =>
+builder.Services.AddSingleton<ISourceCalDavClient>(sp =>
 {
-    var options = sp.GetRequiredService<IOptions<CalendarSyncSettings>>();
-    var settings = options.Value;
-    var sourceLogger = sp.GetRequiredService<ILogger<CalDavClient>>();
-    var sourceClient = new CalDavClient(
-        settings.SourceServerUrl, settings.SourceCalendarUrl, settings.SourceUsername,
-        settings.SourcePassword, sourceLogger);
-    var targetLogger = sp.GetRequiredService<ILogger<CalDavClient>>();
-    var targetClient = new CalDavClient(
-        settings.TargetServerUrl, settings.TargetCalendarUrl, settings.TargetUsername,
-        settings.TargetPassword, targetLogger);
-    var workerLogger = sp.GetRequiredService<ILogger<Worker>>();
-    return new Worker(workerLogger, sourceClient, targetClient, options);
+    var settings = sp.GetRequiredService<IOptions<CalendarSyncSettings>>().Value;
+    var logger = sp.GetRequiredService<ILogger<CalDavClient>>();
+    return new CalDavClient(settings.SourceServerUrl, settings.SourceCalendarUrl, settings.SourceUsername, settings.SourcePassword, logger);
+});
+
+builder.Services.AddSingleton<ITargetCalDavClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<CalendarSyncSettings>>().Value;
+    var logger = sp.GetRequiredService<ILogger<CalDavClient>>();
+    return new CalDavClient(settings.TargetServerUrl, settings.TargetCalendarUrl, settings.TargetUsername, settings.TargetPassword, logger);
 });
 
 builder.Services.AddHostedService<Worker>();

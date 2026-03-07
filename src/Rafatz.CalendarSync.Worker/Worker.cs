@@ -5,12 +5,12 @@ namespace Rafatz.CalendarSync;
 
 public class Worker(
     ILogger<Worker> _logger,
-    ICalDavClient _sourceCalDav,
-    ICalDavClient _targetCalDav,
+    ISourceCalDavClient _sourceCalDav,
+    ITargetCalDavClient _targetCalDav,
     IOptions<CalendarSyncSettings> _options) : BackgroundService
 {
     private readonly CalendarSyncSettings _settings = _options.Value;
-
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("CalendarSync worker started");
@@ -38,6 +38,7 @@ public class Worker(
                 _logger.LogError(ex, "Sync cycle failed");
             }
 
+            _logger.LogDebug("Waiting for {Minutes} minutes until next sync cycle", _settings.SyncIntervalMinutes);
             await Task.Delay(TimeSpan.FromMinutes(_settings.SyncIntervalMinutes), stoppingToken);
         }
 
