@@ -1,19 +1,19 @@
 using System.Text.RegularExpressions;
-using CalDAV.Models;
 using Microsoft.Extensions.Options;
 
 namespace Rafatz.CalendarSync;
 
 public class Worker(
     ILogger<Worker> logger,
-    CalDavClient calDav,
+    SourceCalDavClient sourceCalDav,
+    TargetCalDavClient targetCalDav,
     IOptions<CalendarSyncSettings> options) : BackgroundService
 {
     private readonly CalendarSyncSettings _settings = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("CalendarSync worker started.");
+        logger.LogInformation("CalendarSync worker started");
         logger.LogInformation(
             "Source: {SourceUrl} | Target: {TargetUrl} | Pattern: {Pattern} | DaysAhead: {Days} | PrependMinutes: {Prepend} | Interval: {Interval}min",
             _settings.SourceUrl,
@@ -35,13 +35,13 @@ public class Worker(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Sync cycle failed.");
+                logger.LogError(ex, "Sync cycle failed");
             }
 
             await Task.Delay(TimeSpan.FromMinutes(_settings.SyncIntervalMinutes), stoppingToken);
         }
 
-        logger.LogInformation("CalendarSync worker stopped.");
+        logger.LogInformation("CalendarSync worker stopped");
     }
 
     private async Task RunSyncAsync(CancellationToken ct)
@@ -49,7 +49,7 @@ public class Worker(
         var pattern = new Regex(_settings.SourceEventPattern, RegexOptions.IgnoreCase);
         var today = DateTime.UtcNow.Date;
 
-        logger.LogInformation("Starting sync for {Days} days from {Today}.", _settings.SyncDaysAhead, today);
+        logger.LogInformation("Starting sync for {Days} days from {Today}", _settings.SyncDaysAhead, today);
 
         for (var dayOffset = 0; dayOffset < _settings.SyncDaysAhead; dayOffset++)
         {
@@ -59,7 +59,7 @@ public class Worker(
             await SyncDayAsync(pattern, dayStart, dayEnd, ct);
         }
 
-        logger.LogInformation("Sync complete.");
+        logger.LogInformation("Sync complete");
     }
 
     private async Task SyncDayAsync(
@@ -69,56 +69,38 @@ public class Worker(
         CancellationToken ct)
     {
         // 1. Fetch matching source events for this day
-        var sourceEvents = await calDav.GetEventsAsync(
-            _settings.SourceUrl,
-            _settings.SourceUsername,
-            _settings.SourcePassword,
-            dayStart,
-            dayEnd,
-            ct);
+        var sourceEvents = await sourceCalDav.GetEventsAsync(dayStart, dayEnd, ct);
 
         var matchingEvents = sourceEvents
-            .Where(e => pattern.IsMatch(e.Event.Summary ?? string.Empty))
-            .OrderBy(e => e.Event.StartTime)
+            .Where(e => pattern.IsMatch(e.Summary ?? string.Empty))
+            .OrderBy(e => e.StartTime)
             .ToList();
 
         // 2. Clean up existing target events for this day
-        var targetEvents = await calDav.GetEventsAsync(
-            _settings.TargetUrl,
-            _settings.TargetUsername,
-            _settings.TargetPassword,
-            dayStart,
-            dayEnd,
-            ct);
+        var targetEvents = await targetCalDav.GetEventsAsync(dayStart, dayEnd, ct);
 
         var staleTargetEvents = targetEvents
             .Where(e => string.Equals(
-                e.Event.Summary?.Trim(),
+                e.Summary?.Trim(),
                 _settings.TargetEventName.Trim(),
                 StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         foreach (var stale in staleTargetEvents)
         {
-            logger.LogInformation("Deleting stale target event on {Day}: {Url}", dayStart.Date, stale.Url);
-            await calDav.DeleteEventAsync(
-                _settings.TargetUrl,
-                _settings.TargetUsername,
-                _settings.TargetPassword,
-                stale.Url,
-                stale.Etag,
-                ct);
+            logger.LogInformation("Deleting stale target event on {Day}: {Url}", dayStart.Date, stale.Href);
+            await targetCalDav.DeleteEventAsync(stale.Href, stale.ETag, ct);
         }
 
         // 3. Create merged event if any matching source events exist
         if (matchingEvents.Count == 0)
         {
-            logger.LogDebug("No matching events on {Day}, skipping.", dayStart.Date);
+            logger.LogDebug("No matching events on {Day}, skipping", dayStart.Date);
             return;
         }
 
-        var firstStart = matchingEvents.First().Event.StartTime;
-        var lastEnd = matchingEvents.Max(e => e.Event.EndTime);
+        var firstStart = matchingEvents.First().StartTime;
+        var lastEnd = matchingEvents.Max(e => e.EndTime);
 
         var targetStart = firstStart.AddMinutes(-_settings.PrependMinutes);
         var targetEnd = lastEnd;
@@ -131,13 +113,6 @@ public class Worker(
             targetEnd,
             matchingEvents.Count);
 
-        await calDav.CreateEventAsync(
-            _settings.TargetUrl,
-            _settings.TargetUsername,
-            _settings.TargetPassword,
-            _settings.TargetEventName,
-            targetStart,
-            targetEnd,
-            ct);
+        await targetCalDav.CreateEventAsync(_settings.TargetEventName, targetStart, targetEnd, ct);
     }
 }

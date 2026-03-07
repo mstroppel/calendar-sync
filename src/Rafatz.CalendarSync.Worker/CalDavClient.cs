@@ -4,61 +4,40 @@ using CalDAV.Utils;
 
 namespace Rafatz.CalendarSync;
 
-public class CalDavClient(ILogger<CalDavClient> logger)
+public class CalDavClient(
+    string _calendarUrl,
+    string _username,
+    string _password,
+    ILogger<CalDavClient> _logger)
 {
-    // -------------------------------------------------------------------------
-    // Fetch all events in [start, end) from a CalDAV calendar URL
-    // -------------------------------------------------------------------------
-    public async Task<IReadOnlyList<(string Url, string Etag, CalendarEvent Event)>> GetEventsAsync(
-        string calendarUrl,
-        string username,
-        string password,
+    private readonly CalDAVClient _client = new(_calendarUrl, _username, _password);
+    
+    public async Task<IReadOnlyList<CalendarEvent>> GetEventsAsync(
         DateTime start,
         DateTime end,
         CancellationToken ct)
     {
-        var client = CreateClient(calendarUrl, username, password);
-        await client.InitializeAsync();
+        await _client.InitializeAsync();
 
-        var events = await client.GetEventsAsync(calendarUrl, start, end);
-
-        return events
-            .Select(e => (e.Url ?? string.Empty, e.ETag ?? string.Empty, e))
-            .ToList();
+        var events = await _client.GetEventsAsync(_calendarUrl, start, end);
+        return events;
     }
 
-    // -------------------------------------------------------------------------
-    // Delete a single event by its URL + ETag
-    // -------------------------------------------------------------------------
-    public async Task DeleteEventAsync(
-        string calendarUrl,
-        string username,
-        string password,
-        string eventUrl,
-        string etag,
-        CancellationToken ct)
+    public async Task DeleteEventAsync(string eventUrl, string etag, CancellationToken ct)
     {
-        var client = CreateClient(calendarUrl, username, password);
-        await client.InitializeAsync();
+        await _client.InitializeAsync();
 
-        await client.DeleteEventAsync(eventUrl, etag);
-        logger.LogDebug("Deleted event {Url}", eventUrl);
+        await _client.DeleteEventAsync(eventUrl, etag);
+        _logger.LogDebug("Deleted event {Url}", eventUrl);
     }
 
-    // -------------------------------------------------------------------------
-    // Create a new event in the calendar
-    // -------------------------------------------------------------------------
     public async Task CreateEventAsync(
-        string calendarUrl,
-        string username,
-        string password,
         string summary,
         DateTime startTime,
         DateTime endTime,
         CancellationToken ct)
     {
-        var client = CreateClient(calendarUrl, username, password);
-        await client.InitializeAsync();
+        await _client.InitializeAsync();
 
         var evt = new CalendarEvent
         {
@@ -69,11 +48,13 @@ public class CalDavClient(ILogger<CalDavClient> logger)
         };
 
         var icsData = ICalendarGenerator.GenerateEvent(evt);
-        var createdUrl = await client.CreateEventAsync(calendarUrl, icsData);
-        logger.LogDebug("Created event '{Summary}' at {Url}", summary, createdUrl);
+        var createdUrl = await _client.CreateEventAsync(_calendarUrl, icsData);
+        _logger.LogDebug("Created event '{Summary}' at {Url}", summary, createdUrl);
     }
-
-    // -------------------------------------------------------------------------
-    private static CalDAVClient CreateClient(string url, string username, string password)
-        => new(url, username, password);
 }
+
+public class SourceCalDavClient(string calendarUrl, string username, string password, ILogger<CalDavClient> logger)
+    : CalDavClient(calendarUrl, username, password, logger);
+
+public class TargetCalDavClient(string calendarUrl, string username, string password, ILogger<CalDavClient> logger)
+    : CalDavClient(calendarUrl, username, password, logger);
