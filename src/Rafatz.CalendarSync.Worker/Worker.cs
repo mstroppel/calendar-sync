@@ -75,19 +75,45 @@ public class Worker(
             .OrderBy(e => e.StartTime)
             .ToList();
 
+        var targetEvents = await _targetCalDav.GetEventsAsync(dayStart, dayEnd, ct);
+
+        var existingTargetEvents = targetEvents
+            .Where(e => string.Equals(
+                e.Summary.Trim(),
+                _settings.TargetEventName.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        
+        if (matchingEvents.Count == 0)
+        {
+            _logger.LogDebug("No matching events on {Day}, skipping", dayStart.Date);
+            foreach (var existingTargetEvent in existingTargetEvents)
+            {
+                await _targetCalDav.DeleteEventAsync(existingTargetEvent.Href, existingTargetEvent.ETag, ct);
+            }
+            return;
+        }
+
         var firstStart = matchingEvents.First().StartTime;
         var lastEnd = matchingEvents.Max(e => e.EndTime);
 
         var targetStart = firstStart.AddMinutes(-_settings.PrependMinutes);
         var targetEnd = lastEnd;
 
-        var targetEvents = await _targetCalDav.GetEventsAsync(dayStart, dayEnd, ct);
 
-        var staleTargetEvents = targetEvents
-            .Where(e => string.Equals(
-                e.Summary.Trim(),
-                _settings.TargetEventName.Trim(),
-                StringComparison.OrdinalIgnoreCase))
+        var upToDateEvent = existingTargetEvents
+            .FirstOrDefault(e => e.StartTime == targetStart && e.EndTime == targetEnd);
+
+        if (upToDateEvent is not null)
+        {
+            _logger.LogDebug(
+                "Target event on {Day} already up to date ({Start} -> {End}), skipping",
+                dayStart.Date, targetStart, targetEnd);
+            return;
+        }
+
+        var staleTargetEvents = existingTargetEvents
+            .Where(e => e.StartTime != targetStart || e.EndTime != targetEnd)
             .ToList();
 
         foreach (var stale in staleTargetEvents)
@@ -96,13 +122,6 @@ public class Worker(
             await _targetCalDav.DeleteEventAsync(stale.Href, stale.ETag, ct);
         }
 
-        if (matchingEvents.Count == 0)
-        {
-            _logger.LogDebug("No matching events on {Day}, skipping", dayStart.Date);
-            return;
-        }
-
-        
         _logger.LogInformation(
             "Creating target event on {Day}: '{Name}' {Start} -> {End} (from {Count} source event(s))",
             dayStart.Date,
