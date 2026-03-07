@@ -52,6 +52,8 @@ public class Worker(
 
         _logger.LogInformation("Starting sync for {Days} days from {Today}", _settings.SyncDaysAhead, today);
 
+        await DeletePastTargetEventsAsync(today, ct);
+
         for (var dayOffset = 0; dayOffset < _settings.SyncDaysAhead; dayOffset++)
         {
             var dayStart = today.AddDays(dayOffset);
@@ -131,5 +133,32 @@ public class Worker(
             matchingEvents.Count);
 
         await _targetCalDav.CreateEventAsync(_settings.TargetEventName, targetStart, targetEnd, ct);
+    }
+
+    private async Task DeletePastTargetEventsAsync(DateTime today, CancellationToken ct)
+    {
+        var distantPast = today.AddYears(-1);
+        var pastEvents = await _targetCalDav.GetEventsAsync(distantPast, today, ct);
+
+        var pastTargetEvents = pastEvents
+            .Where(e => string.Equals(
+                e.Summary.Trim(),
+                _settings.TargetEventName.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (pastTargetEvents.Count == 0)
+        {
+            _logger.LogDebug("No past target events to clean up");
+            return;
+        }
+
+        _logger.LogInformation("Deleting {Count} past target event(s) before {Today}", pastTargetEvents.Count, today);
+
+        foreach (var past in pastTargetEvents)
+        {
+            _logger.LogInformation("Deleting past target event ({Start} to {End})", past.StartTime, past.EndTime);
+            await _targetCalDav.DeleteEventAsync(past.Href, past.ETag, ct);
+        }
     }
 }
