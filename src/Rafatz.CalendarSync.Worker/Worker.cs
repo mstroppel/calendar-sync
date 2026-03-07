@@ -140,25 +140,18 @@ public class Worker(
         var distantPast = today.AddYears(-1);
         var pastEvents = await _targetCalDav.GetEventsAsync(distantPast, today, ct);
 
-        var pastTargetEvents = pastEvents
-            .Where(e => string.Equals(
-                e.Summary.Trim(),
-                _settings.TargetEventName.Trim(),
-                StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        if (pastTargetEvents.Count == 0)
+        if (pastEvents.Count == 0)
         {
             _logger.LogDebug("No past target events to clean up");
             return;
         }
 
-        _logger.LogInformation("Deleting {Count} past target event(s) before {Today}", pastTargetEvents.Count, today);
+        _logger.LogInformation("Deleting {Count} past target event(s) before {Today}", pastEvents.Count, today);
 
-        foreach (var past in pastTargetEvents)
+        foreach (var pastEvent in pastEvents)
         {
-            _logger.LogInformation("Deleting past target event ({Start} to {End})", past.StartTime, past.EndTime);
-            await _targetCalDav.DeleteEventAsync(past.Href, past.ETag, ct);
+            _logger.LogInformation("Deleting past target event ({Start} to {End})", pastEvent.StartTime, pastEvent.EndTime);
+            await _targetCalDav.DeleteEventAsync(pastEvent.Href, pastEvent.ETag, ct);
         }
     }
 }
