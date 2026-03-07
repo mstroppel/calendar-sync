@@ -101,17 +101,6 @@ public class Worker(
         var targetEnd = lastEnd;
 
 
-        var upToDateEvent = existingTargetEvents
-            .FirstOrDefault(e => e.StartTime == targetStart && e.EndTime == targetEnd);
-
-        if (upToDateEvent is not null)
-        {
-            _logger.LogDebug(
-                "Target event on {Day} already up to date ({Start} -> {End}), skipping",
-                dayStart.Date, targetStart, targetEnd);
-            return;
-        }
-
         var staleTargetEvents = existingTargetEvents
             .Where(e => e.StartTime != targetStart || e.EndTime != targetEnd)
             .ToList();
@@ -120,6 +109,16 @@ public class Worker(
         {
             _logger.LogInformation("Deleting stale target event on {Day} ({Start} to {End})", dayStart.Date, stale.StartTime, stale.EndTime);
             await _targetCalDav.DeleteEventAsync(stale.Href, stale.ETag, ct);
+        }
+
+        var upToDateEvent = existingTargetEvents.FirstOrDefault(e => e.StartTime == targetStart && e.EndTime == targetEnd);
+        
+        if (upToDateEvent is not null)
+        {
+            _logger.LogDebug(
+                "Target event on {Day} already up to date ({Start} -> {End}), skipping",
+                dayStart.Date, targetStart, targetEnd);
+            return;
         }
 
         _logger.LogInformation(
