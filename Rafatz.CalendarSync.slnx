@@ -11,4 +11,5 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="src/Rafatz.CalendarSync.Worker/Rafatz.CalendarSync.Worker.csproj" />
+  <Project Path="tests/Rafatz.CalendarSync.Worker.Tests/Rafatz.CalendarSync.Worker.Tests.csproj" />
 </Solution>
