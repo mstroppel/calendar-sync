@@ -1,7 +1,6 @@
 ﻿using AutoFixture;
 using AutoFixture.AutoMoq;
 using CalDAV.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -10,7 +9,6 @@ namespace Rafatz.CalendarSync.Tests;
 public class WorkerTests
 {
     private readonly IFixture _fixture = new Fixture().Customize(new AutoMoqCustomization());
-    private readonly Mock<ILogger<Rafatz.CalendarSync.Worker>> _loggerMock;
     private readonly Mock<ISourceCalDavClient> _sourceCalDavMock;
     private readonly Mock<ITargetCalDavClient> _targetCalDavMock;
     private readonly Mock<IOptions<CalendarSyncSettings>> _optionsMock;
@@ -19,7 +17,6 @@ public class WorkerTests
 
     public WorkerTests()
     {
-        _loggerMock = _fixture.Freeze<Mock<ILogger<Rafatz.CalendarSync.Worker>>>();
         _sourceCalDavMock = _fixture.Freeze<Mock<ISourceCalDavClient>>();
         _targetCalDavMock = _fixture.Freeze<Mock<ITargetCalDavClient>>();
         _optionsMock = _fixture.Freeze<Mock<IOptions<CalendarSyncSettings>>>();
