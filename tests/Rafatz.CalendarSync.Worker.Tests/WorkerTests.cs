@@ -1,4 +1,6 @@
-﻿using CalDAV.Models;
+﻿using AutoFixture;
+using AutoFixture.AutoMoq;
+using CalDAV.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -9,6 +11,7 @@ namespace Rafatz.CalendarSync.Tests;
 
 public class WorkerTests
 {
+    private readonly IFixture _fixture;
     private readonly Mock<ILogger<Rafatz.CalendarSync.Worker>> _loggerMock;
     private readonly Mock<ISourceCalDavClient> _sourceCalDavMock;
     private readonly Mock<ITargetCalDavClient> _targetCalDavMock;
@@ -18,35 +21,28 @@ public class WorkerTests
 
     public WorkerTests()
     {
-        _loggerMock = new Mock<ILogger<Rafatz.CalendarSync.Worker>>();
-        _sourceCalDavMock = new Mock<ISourceCalDavClient>();
-        _targetCalDavMock = new Mock<ITargetCalDavClient>();
-        _optionsMock = new Mock<IOptions<CalendarSyncSettings>>();
+        _fixture = new Fixture().Customize(new AutoMoqCustomization());
+        
+        _loggerMock = _fixture.Freeze<Mock<ILogger<Rafatz.CalendarSync.Worker>>>();
+        _sourceCalDavMock = _fixture.Freeze<Mock<ISourceCalDavClient>>();
+        _targetCalDavMock = _fixture.Freeze<Mock<ITargetCalDavClient>>();
+        _optionsMock = _fixture.Freeze<Mock<IOptions<CalendarSyncSettings>>>();
 
-        _settings = new CalendarSyncSettings
-        {
-            SourceServerUrl = new Uri("https://source.com/"),
-            SourceCalendarUrl = new Uri("https://source.com/cal/"),
-            SourceUsername = "user",
-            SourcePassword = "pass",
-            TargetServerUrl = new Uri("https://target.com/"),
-            TargetCalendarUrl = new Uri("https://target.com/cal/"),
-            TargetUsername = "user",
-            TargetPassword = "pass",
-            SourceEventPattern = "SYNC",
-            TargetEventName = "Merged Event",
-            SyncDaysAhead = 1,
-            PrependMinutes = 0,
-            SyncIntervalMinutes = 60
-        };
+        _settings = _fixture.Build<CalendarSyncSettings>()
+            .With(x => x.SourceServerUrl, new Uri("https://source.com/"))
+            .With(x => x.SourceCalendarUrl, new Uri("https://source.com/cal/"))
+            .With(x => x.TargetServerUrl, new Uri("https://target.com/"))
+            .With(x => x.TargetCalendarUrl, new Uri("https://target.com/cal/"))
+            .With(x => x.SourceEventPattern, "SYNC")
+            .With(x => x.TargetEventName, "Merged Event")
+            .With(x => x.SyncDaysAhead, 1)
+            .With(x => x.PrependMinutes, 0)
+            .With(x => x.SyncIntervalMinutes, 60)
+            .Create();
 
         _optionsMock.Setup(x => x.Value).Returns(_settings);
 
-        _sut = new Rafatz.CalendarSync.Worker(
-            _loggerMock.Object,
-            _sourceCalDavMock.Object,
-            _targetCalDavMock.Object,
-            _optionsMock.Object);
+        _sut = _fixture.Create<Rafatz.CalendarSync.Worker>();
     }
 
     [Fact]
@@ -58,8 +54,16 @@ public class WorkerTests
 
         var sourceEvents = new List<CalendarEvent>
         {
-            new() { Summary = "SYNC: Meeting", StartTime = today.AddHours(10), EndTime = today.AddHours(11) },
-            new() { Summary = "SYNC: Call", StartTime = today.AddHours(14), EndTime = today.AddHours(15) }
+            _fixture.Build<CalendarEvent>()
+                .With(x => x.Summary, "SYNC: Meeting")
+                .With(x => x.StartTime, today.AddHours(10))
+                .With(x => x.EndTime, today.AddHours(11))
+                .Create(),
+            _fixture.Build<CalendarEvent>()
+                .With(x => x.Summary, "SYNC: Call")
+                .With(x => x.StartTime, today.AddHours(14))
+                .With(x => x.EndTime, today.AddHours(15))
+                .Create()
         };
 
         SetupSourceEvents(sourceEvents);
@@ -86,12 +90,22 @@ public class WorkerTests
 
         var sourceEvents = new List<CalendarEvent>
         {
-            new() { Summary = "Other: Meeting", StartTime = today.AddHours(10), EndTime = today.AddHours(11) }
+            _fixture.Build<CalendarEvent>()
+                .With(x => x.Summary, "Other: Meeting")
+                .With(x => x.StartTime, today.AddHours(10))
+                .With(x => x.EndTime, today.AddHours(11))
+                .Create()
         };
 
         var targetEvents = new List<CalendarEvent>
         {
-            new() { Summary = _settings.TargetEventName, Href = "/event1", ETag = "tag1", StartTime = today.AddHours(10), EndTime = today.AddHours(11) }
+            _fixture.Build<CalendarEvent>()
+                .With(x => x.Summary, _settings.TargetEventName)
+                .With(x => x.Href, "/event1")
+                .With(x => x.ETag, "tag1")
+                .With(x => x.StartTime, today.AddHours(10))
+                .With(x => x.EndTime, today.AddHours(11))
+                .Create()
         };
 
         SetupSourceEvents(sourceEvents);
@@ -114,13 +128,23 @@ public class WorkerTests
 
         var sourceEvents = new List<CalendarEvent>
         {
-            new() { Summary = "SYNC: Meeting", StartTime = today.AddHours(10), EndTime = today.AddHours(12) }
+            _fixture.Build<CalendarEvent>()
+                .With(x => x.Summary, "SYNC: Meeting")
+                .With(x => x.StartTime, today.AddHours(10))
+                .With(x => x.EndTime, today.AddHours(12))
+                .Create()
         };
 
         // Stale because of different time
         var targetEvents = new List<CalendarEvent>
         {
-            new() { Summary = _settings.TargetEventName, Href = "/stale", ETag = "tag", StartTime = today.AddHours(10), EndTime = today.AddHours(11) }
+            _fixture.Build<CalendarEvent>()
+                .With(x => x.Summary, _settings.TargetEventName)
+                .With(x => x.Href, "/stale")
+                .With(x => x.ETag, "tag")
+                .With(x => x.StartTime, today.AddHours(10))
+                .With(x => x.EndTime, today.AddHours(11))
+                .Create()
         };
 
         SetupSourceEvents(sourceEvents);
