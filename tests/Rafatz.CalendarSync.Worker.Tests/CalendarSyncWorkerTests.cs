@@ -4,7 +4,7 @@ using CalDAV.Models;
 using Microsoft.Extensions.Options;
 using Moq;
 
-namespace Rafatz.CalendarSync.Tests;
+namespace Rafatz.CalendarSync.Worker.Tests;
 
 public class CalendarSyncWorkerTests
 {
@@ -13,7 +13,7 @@ public class CalendarSyncWorkerTests
     private readonly Mock<ITargetCalDavClient> _targetCalDavMock;
     private readonly Mock<IOptions<CalendarSyncSettings>> _optionsMock;
     private readonly CalendarSyncSettings _settings;
-    private readonly Rafatz.CalendarSync.CalendarSyncWorker _sut;
+    private readonly CalendarSyncWorker _sut;
 
     public CalendarSyncWorkerTests()
     {
@@ -35,7 +35,7 @@ public class CalendarSyncWorkerTests
 
         _optionsMock.Setup(x => x.Value).Returns(_settings);
 
-        _sut = _fixture.Create<Rafatz.CalendarSync.CalendarSyncWorker>();
+        _sut = _fixture.Create<CalendarSyncWorker>();
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class CalendarSyncWorkerTests
 
     private async Task CallRunSyncAsync(CancellationToken cancellationToken)
     {
-        var runSyncAsync = typeof(Rafatz.CalendarSync.CalendarSyncWorker).GetMethod("RunSyncAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var runSyncAsync = typeof(CalendarSyncWorker).GetMethod("RunSyncAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         await (Task)runSyncAsync!.Invoke(_sut, [cancellationToken])!;
     }
 

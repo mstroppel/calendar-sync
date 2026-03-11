@@ -4,6 +4,9 @@ using Rafatz.CalendarSync.Extensions;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole();
+
 builder.Services.AddSingleton<IOptions<CalendarSyncSettings>>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
