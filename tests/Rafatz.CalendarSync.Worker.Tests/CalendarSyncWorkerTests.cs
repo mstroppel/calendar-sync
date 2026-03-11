@@ -6,16 +6,16 @@ using Moq;
 
 namespace Rafatz.CalendarSync.Tests;
 
-public class WorkerTests
+public class CalendarSyncWorkerTests
 {
     private readonly IFixture _fixture = new Fixture().Customize(new AutoMoqCustomization());
     private readonly Mock<ISourceCalDavClient> _sourceCalDavMock;
     private readonly Mock<ITargetCalDavClient> _targetCalDavMock;
     private readonly Mock<IOptions<CalendarSyncSettings>> _optionsMock;
     private readonly CalendarSyncSettings _settings;
-    private readonly Rafatz.CalendarSync.Worker _sut;
+    private readonly Rafatz.CalendarSync.CalendarSyncWorker _sut;
 
-    public WorkerTests()
+    public CalendarSyncWorkerTests()
     {
         _sourceCalDavMock = _fixture.Freeze<Mock<ISourceCalDavClient>>();
         _targetCalDavMock = _fixture.Freeze<Mock<ITargetCalDavClient>>();
@@ -35,7 +35,7 @@ public class WorkerTests
 
         _optionsMock.Setup(x => x.Value).Returns(_settings);
 
-        _sut = _fixture.Create<Rafatz.CalendarSync.Worker>();
+        _sut = _fixture.Create<Rafatz.CalendarSync.CalendarSyncWorker>();
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class WorkerTests
 
     private async Task CallRunSyncAsync(CancellationToken cancellationToken)
     {
-        var runSyncAsync = typeof(Rafatz.CalendarSync.Worker).GetMethod("RunSyncAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var runSyncAsync = typeof(Rafatz.CalendarSync.CalendarSyncWorker).GetMethod("RunSyncAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         await (Task)runSyncAsync!.Invoke(_sut, [cancellationToken])!;
     }
 

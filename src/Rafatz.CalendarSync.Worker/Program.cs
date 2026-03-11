@@ -40,7 +40,7 @@ builder.Services.AddSingleton<ITargetCalDavClient>(sp =>
     return new CalDavClient(settings.TargetServerUrl, settings.TargetCalendarUrl, settings.TargetUsername, settings.TargetPassword, logger);
 });
 
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddHostedService<CalendarSyncWorker>();
 
 var host = builder.Build();
 host.Run();

@@ -3,8 +3,8 @@ using Microsoft.Extensions.Options;
 
 namespace Rafatz.CalendarSync;
 
-public class Worker(
-    ILogger<Worker> _logger,
+public class CalendarSyncWorker(
+    ILogger<CalendarSyncWorker> _logger,
     ISourceCalDavClient _sourceCalDav,
     ITargetCalDavClient _targetCalDav,
     IOptions<CalendarSyncSettings> _options) : BackgroundService
