@@ -42,3 +42,18 @@ Optional parameters:
 ## Logging Integration
 
 The calendar-sync service logs its output to the console as JSON. So it can be easily integrated with logging systems like Grafana Loki.
+
+Logs are structured as follows:
+
+```json
+{
+  "EventId": 0,
+  "LogLevel": "Error",
+  "Category": "Rafatz.CalendarSync.CalendarSyncWorker",
+  "Message": "Sync cycle failed",
+  "Exception": "System.ArgumentException: Exception message\n   at Rafatz.CalendarSync.CalendarSyncWorker.ExecuteAsync(CancellationToken stoppingToken) in D:\\github\\calendar-sync\\src\\Rafatz.CalendarSync.Worker\\CalendarSyncWorker.cs:line 30",
+  "State": {
+    "{OriginalFormat}": "Sync cycle failed"
+  }
+}
+```
