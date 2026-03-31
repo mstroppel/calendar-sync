@@ -9,9 +9,10 @@ public class CalDavClient(
     Uri _calendarUrl,
     string _username,
     string _password,
+    HttpClient _httpClient,
     ILogger<CalDavClient> _logger) : ISourceCalDavClient, ITargetCalDavClient
 {
-    private readonly CalDAVClient _client = new(_serverUrl.ToString(), _username, _password);
+    private readonly CalDAVClient _client = new(_serverUrl.ToString(), _username, _password, _httpClient);
     private bool _initialized;
     
     public async Task<IReadOnlyList<CalendarEvent>> GetEventsAsync(
@@ -19,19 +20,19 @@ public class CalDavClient(
         DateTime end,
         CancellationToken cancellationToken)
     {
-        await InitializeAsync();
+        await InitializeAsync(cancellationToken);
 
-        var events = await _client.GetEventsAsync(_calendarUrl.ToString(), start, end);
+        var events = await _client.GetEventsAsync(_calendarUrl.ToString(), start, end, cancellationToken);
         return events;
     }
 
     public async Task DeleteEventAsync(string eventHref, string etag, CancellationToken cancellationToken)
     {
-        await InitializeAsync();
+        await InitializeAsync(cancellationToken);
         
         var eventUrl = $"{_serverUrl.Scheme}://{_serverUrl.Host}{eventHref}"; 
 
-        await _client.DeleteEventAsync(eventUrl, etag);
+        await _client.DeleteEventAsync(eventUrl, etag, cancellationToken);
         _logger.LogDebug("Deleted event {Url}", eventUrl);
     }
 
@@ -41,7 +42,7 @@ public class CalDavClient(
         DateTime endTime,
         CancellationToken cancellationToken)
     {
-        await InitializeAsync();
+        await InitializeAsync(cancellationToken);
 
         var evt = new CalendarEvent
         {
@@ -56,13 +57,13 @@ public class CalDavClient(
         _logger.LogDebug("Created event '{Summary}' at {Url}", summary, createdUrl);
     }
 
-    private async Task InitializeAsync()
+    private async Task InitializeAsync(CancellationToken cancellationToken)
     {
         if (_initialized)
         {
             return;
         }
-        await _client.InitializeAsync();
+        await _client.InitializeAsync(cancellationToken);
         _initialized = true;
     }
 }
