@@ -29,19 +29,31 @@ builder.Services.AddSingleton<IOptions<CalendarSyncSettings>>(sp =>
     return Options.Create(settings);
 });
 
-builder.Services.AddSingleton<ISourceCalDavClient>(sp =>
+builder.Services.AddHttpClient<ISourceCalDavClient, CalDavClient>((client, sp) =>
 {
     var settings = sp.GetRequiredService<IOptions<CalendarSyncSettings>>().Value;
-    var logger = sp.GetRequiredService<ILogger<CalDavClient>>();
-    return new CalDavClient(settings.SourceServerUrl, settings.SourceCalendarUrl, settings.SourceUsername, settings.SourcePassword, logger);
-});
+    return new CalDavClient(
+        settings.SourceServerUrl,
+        settings.SourceCalendarUrl,
+        settings.SourceUsername,
+        settings.SourcePassword,
+        client,
+        sp.GetRequiredService<ILogger<CalDavClient>>());
+})
+.AddStandardResilienceHandler();
 
-builder.Services.AddSingleton<ITargetCalDavClient>(sp =>
+builder.Services.AddHttpClient<ITargetCalDavClient, CalDavClient>((client, sp) =>
 {
     var settings = sp.GetRequiredService<IOptions<CalendarSyncSettings>>().Value;
-    var logger = sp.GetRequiredService<ILogger<CalDavClient>>();
-    return new CalDavClient(settings.TargetServerUrl, settings.TargetCalendarUrl, settings.TargetUsername, settings.TargetPassword, logger);
-});
+    return new CalDavClient(
+        settings.TargetServerUrl,
+        settings.TargetCalendarUrl,
+        settings.TargetUsername,
+        settings.TargetPassword,
+        client,
+        sp.GetRequiredService<ILogger<CalDavClient>>());
+})
+.AddStandardResilienceHandler();
 
 builder.Services.AddHostedService<CalendarSyncWorker>();
 
