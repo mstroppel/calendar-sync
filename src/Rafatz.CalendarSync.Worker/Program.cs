@@ -6,6 +6,8 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole();
+builder.Logging.AddFilter("Polly", LogLevel.Critical);
+builder.Logging.AddFilter("Microsoft.Extensions.Http.Resilience", LogLevel.Critical);
 
 builder.Services.AddSingleton<IOptions<CalendarSyncSettings>>(sp =>
 {

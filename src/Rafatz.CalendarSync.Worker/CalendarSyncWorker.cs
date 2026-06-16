@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 
@@ -33,6 +34,10 @@ public class CalendarSyncWorker(
             {
                 break;
             }
+            catch (Exception ex) when (IsTransientNetworkException(ex))
+            {
+                _logger.LogWarning(ex, "Sync cycle skipped because the network is temporarily unreachable");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Sync cycle failed");
@@ -44,6 +49,36 @@ public class CalendarSyncWorker(
 
         _logger.LogInformation("CalendarSync worker stopped");
     }
+
+    private static bool IsTransientNetworkException(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is TimeoutException)
+            {
+                return true;
+            }
+
+            if (current is SocketException socketException && IsTransientSocketError(socketException.SocketErrorCode))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsTransientSocketError(SocketError socketError) => socketError is
+        SocketError.NetworkDown or
+        SocketError.NetworkUnreachable or
+        SocketError.HostDown or
+        SocketError.HostUnreachable or
+        SocketError.HostNotFound or
+        SocketError.TryAgain or
+        SocketError.TimedOut or
+        SocketError.ConnectionRefused or
+        SocketError.ConnectionReset or
+        SocketError.ConnectionAborted;
 
     private async Task RunSyncAsync(CancellationToken cancellationToken)
     {
