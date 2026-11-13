@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <RootNamespace>Rafatz.CalendarSync</RootNamespace>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-Rafatz.CalendarSync-4ef829e1-9a7a-40bb-a969-38f84bf2bf77</UserSecretsId>
